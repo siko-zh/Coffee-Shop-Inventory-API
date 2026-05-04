@@ -1,6 +1,5 @@
 package com.zholdigaliev.coffeeshopims.controller;
 
-
 import com.zholdigaliev.coffeeshopims.dto.ProductDto.ProductRequest;
 import com.zholdigaliev.coffeeshopims.dto.ProductDto.ProductResponse;
 import com.zholdigaliev.coffeeshopims.service.ProductService;
@@ -18,9 +17,14 @@ import java.util.List;
 public class ProductController {
     private final ProductService productService;
 
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         return ResponseEntity.ok(productService.getAll());
+    }
+
+    @GetMapping(params = "category")
+    public ResponseEntity<List<ProductResponse>> getAllByCategory(@RequestParam Long category) {
+        return ResponseEntity.ok(productService.getAllByCategoryId(category));
     }
 
     @GetMapping("/{id}")
@@ -28,19 +32,15 @@ public class ProductController {
         return ResponseEntity.ok(productService.getById(id));
     }
 
-    @GetMapping()
-    public ResponseEntity<List<ProductResponse>> getAllByCategory(@RequestParam(value = "category", required = false) Long categoryId) {
-        return ResponseEntity.ok(productService.getAllByCategoryId(categoryId));
-    }
-
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<ProductResponse> createProduct(@RequestBody @Valid ProductRequest request) {
         ProductResponse response = productService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id, @RequestBody @Valid ProductRequest request) {
+    public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id,
+                                                          @RequestBody @Valid ProductRequest request) {
         return ResponseEntity.ok(productService.update(id, request));
     }
 
@@ -50,4 +50,3 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 }
-

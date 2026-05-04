@@ -17,7 +17,7 @@ import java.util.List;
 public class BranchController {
     private final BranchService branchService;
 
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<List<BranchResponse>> getAllBranches() {
         return ResponseEntity.ok(branchService.getAll());
     }
@@ -27,14 +27,15 @@ public class BranchController {
         return ResponseEntity.ok(branchService.getById(id));
     }
 
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<BranchResponse> createBranch(@RequestBody @Valid BranchRequest request) {
         BranchResponse response = branchService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<BranchResponse> updateBranch(@PathVariable Long id, @RequestBody @Valid BranchRequest request) {
+    public ResponseEntity<BranchResponse> updateBranch(@PathVariable Long id,
+                                                        @RequestBody @Valid BranchRequest request) {
         return ResponseEntity.ok(branchService.update(id, request));
     }
 
