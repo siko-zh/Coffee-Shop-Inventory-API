@@ -35,17 +35,17 @@ public class ShiftServiceImpl implements ShiftService {
                 .orElseThrow(() -> new RuntimeException("Branch not found: " + request.getBranchId()));
 
         Shift shift = shiftRepository.findByBranch(branch)
-                .orElseThrow(() -> new RuntimeException("Shift not found by Branch: " + branch.getId()));
+                .orElse(new Shift());
 
         if(shift.getStatus().equals(ShiftStatus.OPEN)) {
             throw new RuntimeException("Shift is already opened");
         }
 
-        Shift newShift = new Shift();
+        Shift newShift = shift;
 
-        shift.setBranch(branch);
-        shift.setOpenedBy(user);
-        shift.setStatus(ShiftStatus.OPEN);
+        newShift.setBranch(branch);
+        newShift.setOpenedBy(user);
+        newShift.setStatus(ShiftStatus.OPEN);
 
         Shift saved = shiftRepository.save(newShift);
 

@@ -29,7 +29,7 @@ public class ProductController {
     }
 
     @GetMapping()
-    public ResponseEntity<List<ProductResponse>> getAllByCategory(@RequestParam(required = false) Long categoryId) {
+    public ResponseEntity<List<ProductResponse>> getAllByCategory(@RequestParam(value = "category", required = false) Long categoryId) {
         return ResponseEntity.ok(productService.getAllByCategoryId(categoryId));
     }
 
@@ -39,12 +39,12 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id, @RequestBody @Valid ProductRequest request) {
         return ResponseEntity.ok(productService.update(id, request));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.delete(id);
         return ResponseEntity.noContent().build();

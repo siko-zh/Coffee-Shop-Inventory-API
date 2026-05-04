@@ -2,7 +2,6 @@ package com.zholdigaliev.coffeeshopims.controller;
 
 import com.zholdigaliev.coffeeshopims.dto.BranchDto.BranchRequest;
 import com.zholdigaliev.coffeeshopims.dto.BranchDto.BranchResponse;
-import com.zholdigaliev.coffeeshopims.entity.Branch;
 import com.zholdigaliev.coffeeshopims.service.BranchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,12 +33,12 @@ public class BranchController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     public ResponseEntity<BranchResponse> updateBranch(@PathVariable Long id, @RequestBody @Valid BranchRequest request) {
         return ResponseEntity.ok(branchService.update(id, request));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBranch(@PathVariable Long id) {
         branchService.delete(id);
         return ResponseEntity.noContent().build();
