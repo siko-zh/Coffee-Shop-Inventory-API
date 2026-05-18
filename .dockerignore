@@ -1,0 +1,12 @@
+build/
+.gradle/
+.idea/
+*.iml
+*.log
+.git/
+.gitignore
+docs/
+memory/
+application.properties
+docker-compose.yml
+.env
