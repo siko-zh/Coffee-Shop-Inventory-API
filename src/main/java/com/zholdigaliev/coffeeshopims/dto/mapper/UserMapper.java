@@ -8,10 +8,9 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
+    @Mapping(source = "branch.id", target = "branchId")
     @Mapping(source = "branch.name", target = "branchName")
     UserResponse toResponse(User user);
 
     User toEntity(UserRequest request);
-
-
 }

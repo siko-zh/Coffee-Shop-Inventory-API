@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class StockMovementFilter {
     private Long productId;
     private Long branchId;
-    private MovementType type; // ENUM (IN/OUT)
+    private MovementType type;
     private Long userId;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
