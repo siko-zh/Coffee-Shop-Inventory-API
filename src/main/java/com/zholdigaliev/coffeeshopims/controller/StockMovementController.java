@@ -1,6 +1,5 @@
 package com.zholdigaliev.coffeeshopims.controller;
 
-import com.zholdigaliev.coffeeshopims.dto.StockMovementDto.StockMovementFilter;
 import com.zholdigaliev.coffeeshopims.dto.StockMovementDto.StockMovementResponse;
 import com.zholdigaliev.coffeeshopims.service.StockMovementService;
 import lombok.RequiredArgsConstructor;

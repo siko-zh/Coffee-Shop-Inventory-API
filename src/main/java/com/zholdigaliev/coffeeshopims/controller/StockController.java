@@ -1,15 +1,17 @@
 package com.zholdigaliev.coffeeshopims.controller;
 
+import com.zholdigaliev.coffeeshopims.dto.StockDto.StockMinQuantityRequest;
 import com.zholdigaliev.coffeeshopims.dto.StockDto.StockResponse;
+import com.zholdigaliev.coffeeshopims.dto.StockDto.StockWriteOffRequest;
 import com.zholdigaliev.coffeeshopims.service.StockService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/stocks")
@@ -28,19 +30,21 @@ public class StockController {
     }
 
     @PatchMapping("/{id}/min")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<StockResponse> setMinQuantity(@PathVariable Long id,
-                                                         @RequestBody Map<String, BigDecimal> body) {
-        return ResponseEntity.ok(stockService.setMinQuantity(id, body.get("minQuantity")));
+                                                         @RequestBody @Valid StockMinQuantityRequest request) {
+        return ResponseEntity.ok(stockService.setMinQuantity(id, request.getMinQuantity()));
     }
 
     @PostMapping("/write-off")
-    public ResponseEntity<StockResponse> writeOff(@RequestBody Map<String, Object> body) {
-        Long branchId = Long.valueOf(body.get("branchId").toString());
-        Long productId = Long.valueOf(body.get("productId").toString());
-        BigDecimal quantity = new BigDecimal(body.get("quantity").toString());
-        String reason = (String) body.get("reason");
-
-        StockResponse response = stockService.writeOff(branchId, productId, quantity, reason);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'BARISTA')")
+    public ResponseEntity<StockResponse> writeOff(@RequestBody @Valid StockWriteOffRequest request) {
+        StockResponse response = stockService.writeOff(
+                request.getBranchId(),
+                request.getProductId(),
+                request.getQuantity(),
+                request.getReason()
+        );
+        return ResponseEntity.ok(response);
     }
 }
