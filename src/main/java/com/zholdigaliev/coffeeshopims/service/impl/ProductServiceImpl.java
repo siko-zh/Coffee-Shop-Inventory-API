@@ -55,6 +55,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductResponse> getAllByCategoryId(Long categoryId) {
         return productRepository.findAllByCategoryId(categoryId).stream()
+                .map(mapper::toResponse)
                 .toList();
     }
 

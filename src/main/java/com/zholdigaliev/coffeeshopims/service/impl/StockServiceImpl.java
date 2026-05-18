@@ -7,8 +7,11 @@ import com.zholdigaliev.coffeeshopims.repository.BranchRepository;
 import com.zholdigaliev.coffeeshopims.repository.ProductRepository;
 import com.zholdigaliev.coffeeshopims.repository.StockMovementRepository;
 import com.zholdigaliev.coffeeshopims.repository.StockRepository;
+import com.zholdigaliev.coffeeshopims.repository.UserRepository;
+import com.zholdigaliev.coffeeshopims.security.CustomUserDetails;
 import com.zholdigaliev.coffeeshopims.service.StockService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,7 @@ public class StockServiceImpl implements StockService {
     private final BranchRepository branchRepository;
     private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final UserRepository userRepository;
     private final StockMapper mapper;
 
     @Override
@@ -33,9 +37,7 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public List<StockResponse> getLowStock(Long branchId) {
-        return stockRepository.findAll().stream()
-                .filter(s-> s.getBranch().getId().equals(branchId))
-                .filter(s -> s.getQuantity().compareTo(s.getMinQuantity()) <= 0)
+        return stockRepository.findLowStockByBranchId(branchId).stream()
                 .map(mapper::toResponse)
                 .toList();
     }
@@ -46,9 +48,7 @@ public class StockServiceImpl implements StockService {
                 .orElseThrow(() -> new RuntimeException("Stock not found: " + id));
 
         stock.setMinQuantity(minQuantity);
-
         Stock savedStock = stockRepository.save(stock);
-
         return mapper.toResponse(savedStock);
     }
 
@@ -60,26 +60,32 @@ public class StockServiceImpl implements StockService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
 
-        Stock stock = stockRepository.findStockByBranchAndProduct(branch, product).
-                orElseThrow(() -> new RuntimeException("Branch and Product not found"));
+        Stock stock = stockRepository.findStockByBranchAndProduct(branch, product)
+                .orElseThrow(() -> new RuntimeException("Stock not found for branch " + branchId + " and product " + productId));
 
         if (stock.getQuantity().compareTo(quantity) < 0) {
-            throw new RuntimeException("Out of stock");
+            throw new RuntimeException("Insufficient stock: have " + stock.getQuantity() + ", requested " + quantity);
         }
 
         stock.setQuantity(stock.getQuantity().subtract(quantity));
+        stockRepository.save(stock);
 
-        Stock stockSaved = stockRepository.save(stock);
         StockMovement stockMovement = new StockMovement();
-
         stockMovement.setProduct(product);
         stockMovement.setBranch(branch);
+        stockMovement.setCreatedBy(getCurrentUser());
         stockMovement.setType(MovementType.OUT);
         stockMovement.setQuantity(quantity);
         stockMovement.setReason(reason);
-
         stockMovementRepository.save(stockMovement);
 
-        return mapper.toResponse(stockSaved);
+        return mapper.toResponse(stock);
+    }
+
+    private User getCurrentUser() {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        return userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new RuntimeException("Current user not found"));
     }
 }

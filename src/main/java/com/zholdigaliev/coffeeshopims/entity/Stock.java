@@ -16,14 +16,16 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 
 @Entity
-@Table(name = "stocks")
+@Table(name = "stocks", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"branch_id", "product_id"})
+})
 public class Stock {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false, unique = true)
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)

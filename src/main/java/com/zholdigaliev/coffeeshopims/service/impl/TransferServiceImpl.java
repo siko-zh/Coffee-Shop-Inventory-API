@@ -129,6 +129,14 @@ public class TransferServiceImpl implements TransferService {
     }
 
     @Override
+    public TransferResponse getById(Long transferId) {
+        Transfer transfer = transferRepository.findById(transferId)
+                .orElseThrow(() -> new RuntimeException("Transfer is not found: " + transferId));
+
+        return mapper.toResponse(transfer);
+    }
+
+    @Override
     public List<TransferResponse> getAllByBranch(Long branchId) {
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new RuntimeException("Branch not found: " + branchId));

@@ -7,11 +7,14 @@ import com.zholdigaliev.coffeeshopims.dto.mapper.SupplyItemMapper;
 import com.zholdigaliev.coffeeshopims.dto.mapper.SupplyMapper;
 import com.zholdigaliev.coffeeshopims.entity.*;
 import com.zholdigaliev.coffeeshopims.repository.*;
+import com.zholdigaliev.coffeeshopims.security.CustomUserDetails;
 import com.zholdigaliev.coffeeshopims.service.SupplyService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +33,7 @@ public class SupplyServiceImpl implements SupplyService {
     private final SupplyItemRepository supplyItemRepository;
     private final StockRepository stockRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final UserRepository userRepository;
     private final SupplyMapper mapper;
     private final SupplyItemMapper supplyItemMapper;
 
@@ -43,6 +47,7 @@ public class SupplyServiceImpl implements SupplyService {
         Supply supply = mapper.toEntity(request);
         supply.setSupplier(supplier);
         supply.setBranch(branch);
+        supply.setCreatedBy(getCurrentUser());
         supply.setStatus(SupplyStatus.PENDING);
 
         Supply savedSupply = supplyRepository.save(supply);
@@ -65,20 +70,16 @@ public class SupplyServiceImpl implements SupplyService {
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
-
         for (SupplyItemRequest item : request.getItems()) {
             SupplyItem supplyItem = supplyItemMapper.toEntity(item);
             Product product = productMap.get(item.getProductId());
             supplyItem.setProduct(product);
             supplyItem.setSupply(savedSupply);
-
-
             items.add(supplyItem);
         }
         supplyItemRepository.saveAll(items);
 
         savedSupply.setItems(items);
-
 
         return mapper.toResponse(savedSupply);
     }
@@ -87,7 +88,6 @@ public class SupplyServiceImpl implements SupplyService {
     public SupplyResponse getById(Long id) {
         Supply supply = supplyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Supply not found: " + id));
-
         return mapper.toResponse(supply);
     }
 
@@ -103,23 +103,22 @@ public class SupplyServiceImpl implements SupplyService {
         Supply supply = supplyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Supply not found: " + id));
 
-        if(!supply.getStatus().equals(SupplyStatus.PENDING)) {
-            throw new RuntimeException("Supply is already accepted or cancel");
+        if (!supply.getStatus().equals(SupplyStatus.PENDING)) {
+            throw new RuntimeException("Supply is already accepted or cancelled");
         }
 
-        if(supply.getItems() == null || supply.getItems().isEmpty()) {
+        if (supply.getItems() == null || supply.getItems().isEmpty()) {
             throw new RuntimeException("An empty supply cannot be accepted");
         }
 
         for (SupplyItem item : supply.getItems()) {
-
             Stock stock = stockRepository.findStockByBranchAndProduct(supply.getBranch(), item.getProduct())
                     .orElseGet(() -> {
                         Stock newStock = new Stock();
                         newStock.setProduct(item.getProduct());
                         newStock.setBranch(supply.getBranch());
-                        newStock.setQuantity(java.math.BigDecimal.ZERO);
-                        newStock.setMinQuantity(java.math.BigDecimal.ZERO);
+                        newStock.setQuantity(BigDecimal.ZERO);
+                        newStock.setMinQuantity(BigDecimal.ZERO);
                         return newStock;
                     });
 
@@ -129,11 +128,13 @@ public class SupplyServiceImpl implements SupplyService {
             StockMovement movement = new StockMovement();
             movement.setProduct(item.getProduct());
             movement.setBranch(supply.getBranch());
+            movement.setCreatedBy(getCurrentUser());
             movement.setType(MovementType.IN);
             movement.setQuantity(item.getQuantity());
-            movement.setReason("Accept supply #" + supply.getId());
+            movement.setReason("Supply #" + supply.getId() + " received");
             stockMovementRepository.save(movement);
         }
+
         supply.setStatus(SupplyStatus.RECEIVED);
         supply.setReceivedAt(LocalDateTime.now());
         Supply savedSupply = supplyRepository.save(supply);
@@ -146,14 +147,20 @@ public class SupplyServiceImpl implements SupplyService {
         Supply supply = supplyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Supply not found: " + id));
 
-        if(supply.getStatus().equals(SupplyStatus.RECEIVED)) {
-            throw new RuntimeException("A received supply cannot be canceled.");
+        if (supply.getStatus().equals(SupplyStatus.RECEIVED)) {
+            throw new RuntimeException("A received supply cannot be cancelled");
         }
 
         supply.setStatus(SupplyStatus.CANCELLED);
-
         Supply saved = supplyRepository.save(supply);
 
         return mapper.toResponse(saved);
+    }
+
+    private User getCurrentUser() {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext()
+                .getAuthentication().getPrincipal();
+        return userRepository.findById(userDetails.getId())
+                .orElseThrow(() -> new RuntimeException("Current user not found"));
     }
 }

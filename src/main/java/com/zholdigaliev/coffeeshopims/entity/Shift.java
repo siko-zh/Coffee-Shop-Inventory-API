@@ -28,17 +28,17 @@ public class Shift {
     private User openedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "closed_by", nullable = true)
-    private User closedBy; // null пока смена открыта
+    @JoinColumn(name = "closed_by")
+    private User closedBy;
 
     @Enumerated(EnumType.STRING)
-    private ShiftStatus status; // OPEN / CLOSED
+    private ShiftStatus status;
 
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime openedAt;
 
-    private LocalDateTime closedAt; // null пока OPEN
+    private LocalDateTime closedAt;
 
     private String notes;
 }
